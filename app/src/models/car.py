@@ -1,27 +1,21 @@
+import logging
 from dataclasses import dataclass, field
-from enum import IntEnum
-from typing import Protocol
+from random import random
 
-
-@dataclass
-class Gear(IntEnum):
-    NEUTRAL = 0
-    ONE = 1
-    TWO = 2
-    THREE = 3
-    FOUR = 4
-    FIVE = 5
-    SIX = 6
+from app.src.models.errors import ErrorCodes
 
 
 @dataclass
 class CarModel:
+    id: int
     name: str
-    gears: list[tuple[Gear, tuple[int, int]]] = field(default_factory=list)
+    year: int
+    gears: list[tuple[int, int]] = field(default_factory=list)
 
 
 @dataclass
 class Car:
+    id: int
     model: CarModel
     _speed: int = 0
     _current_gear: int = 0
@@ -29,7 +23,7 @@ class Car:
 
     def __post_init__(self):
         # Define max speed by the highest gear range
-        self._max_speed = self.model.gears[-1][1][1]
+        self._max_speed = self.model.gears[-1][1]
 
     def __str__(self):
         return f"({self.model.name}) Speed, Gear: ({self.speed} km/h, {self.current_gear})"
@@ -43,14 +37,20 @@ class Car:
         return self._current_gear
 
     def _automatic_shift(self, speed: int) -> None:
-        ranges = [x[1] for x in self.model.gears]
-        for i, speed_range in enumerate(ranges):
-            if speed_range[0] <= speed <= speed_range[1]:
-                if self.current_gear != i:
-                    print(f"Automatically changed gear from {self._current_gear} to {i}")
-                    self._current_gear = i
+        ranges = self.model.gears
+        randomizer = random()
 
-                break
+        if randomizer < 0.2:
+            logging.error(ErrorCodes.GEAR_SHIFT_MALFUNCTION)
+
+        else:
+            for i, speed_range in enumerate(ranges):
+                if speed_range[0] <= speed <= speed_range[1]:
+                    if self.current_gear != i:
+                        print(f"Automatically changed gear from {self._current_gear} to {i}")
+                        self._current_gear = i
+
+                    break
 
     def change_speed(self, value: int) -> None:
         new_speed = self._speed + value
@@ -73,7 +73,7 @@ class Car:
     def _change_gear(self, value: int) -> None:
         new_gear = self._current_gear + value
         if 0 <= new_gear <= len(self.model.gears) - 1:
-            speed_range = self.model.gears[new_gear][1]
+            speed_range = self.model.gears[new_gear]
             if self._speed < speed_range[1]:
                 print(f"Manually shifted gear to: {new_gear}")
                 self._current_gear = new_gear
@@ -96,12 +96,12 @@ class Car:
 
 if __name__ == "__main__":
     corolla = CarModel(gears=[
-        (Gear.NEUTRAL, (0, 0)),
-        (Gear.ONE, (0, 30)),
-        (Gear.TWO, (20, 55)),
-        (Gear.THREE, (40, 105)),
-        (Gear.FOUR, (90, 140)),
-        (Gear.FIVE, (130, 170)),
+        (0, 0),
+        (0, 30),
+        (20, 55),
+        (40, 105),
+        (90, 140),
+        (130, 170),
     ],
         name="Corolla")
 
